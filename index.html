@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#EDE8FA">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Kairos">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<title>Kairos · Faith Planner</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Caveat:wght@600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#2A2C4A; --ink2:#5B5E7E; --mist:#F5F4F9; --peri:#8F9CCB; --sage:#AEBFA6;
+  --blush:#EBCBC6; --gold:#B8924A; --lilac:#E4DEF0; --line:#DCD9E8;
+  --t-peri:#D6E4FA; --t-sage:#D3F0DE; --t-blush:#FFDCE5; --t-gold:#FFF2BD; --t-lilac:#E5DBF8; --t-peach:#FFE0CC; --hand:'Caveat',cursive;
+  --serif:'Cormorant Garamond',Georgia,serif; --sans:'Nunito',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:var(--sans);color:var(--ink);background:radial-gradient(rgba(143,156,203,.24) 1.2px,transparent 1.7px) 0 0/22px 22px,linear-gradient(180deg,#EDE8FA 0,#F7F3FB 340px,#FDEEF0 100%);background-attachment:scroll,fixed;min-height:100vh;padding-bottom:96px}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input,textarea,select{font:inherit;color:inherit;width:100%;border:1px solid var(--line);background:#fff;border-radius:12px;padding:11px 13px}
+textarea{resize:vertical;min-height:70px}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.wrap{max-width:760px;margin:0 auto;padding:calc(22px + env(safe-area-inset-top)) 18px 22px}
+
+/* header */
+.brand{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+.brand h1{font-family:var(--serif);font-weight:600;font-size:28px;letter-spacing:.5px}
+.brand span{font-size:13px;color:var(--ink2);margin-left:auto}
+
+/* verse card */
+.verse{position:relative;margin:0 auto 26px;max-width:520px;padding:26px 26px 14px;text-align:center;border-radius:24px;background:linear-gradient(135deg,#fff 0,#F1EBFB 60%,#FFE9EF 100%);border:1.5px dashed #CDC3EA;box-shadow:0 12px 24px -14px rgba(42,44,74,.3)}
+.verse p{font-family:var(--serif);font-style:italic;font-size:22px;line-height:1.35}
+.verse .ref{font-family:var(--hand);font-size:23px;color:var(--gold);margin-top:4px}
+.verse .shuffle{display:block;margin:6px auto 0;font-size:12px;color:var(--ink2);padding:4px 12px;border-radius:99px}
+.verse .shuffle:hover{background:var(--lilac)}
+.verse::before,.note::before{content:"";position:absolute;top:-10px;left:50%;width:76px;height:22px;margin-left:-38px;transform:rotate(-3deg);border-radius:3px;background:repeating-linear-gradient(45deg,var(--tape,rgba(245,169,190,.8)) 0 6px,rgba(255,255,255,.6) 6px 12px)}
+
+/* dashboard notes */
+.notes{display:grid;grid-template-columns:1fr;gap:26px 20px;margin-top:8px}
+@media(min-width:560px){.notes{grid-template-columns:1fr 1fr}.note.wide{grid-column:1/-1}}
+.note{position:relative;border-radius:5px 5px 24px 5px;padding:24px 18px 18px;box-shadow:0 12px 20px -14px rgba(42,44,74,.4)}
+.note:nth-child(odd){transform:rotate(-.8deg)}
+.note:nth-child(even){transform:rotate(.7deg)}
+.note.wide{transform:rotate(-.3deg)}
+.n-butter{background:var(--t-gold);--tape:rgba(242,201,76,.85)}
+.n-sky{background:var(--t-peri);--tape:rgba(130,170,230,.85)}
+.n-pink{background:var(--t-blush);--tape:rgba(245,150,175,.85)}
+.n-mint{background:var(--t-sage);--tape:rgba(120,200,155,.85)}
+.n-peach{background:var(--t-peach);--tape:rgba(245,170,120,.85)}
+.n-lav{background:var(--t-lilac);--tape:rgba(170,150,225,.85)}
+.note h3{font-family:var(--hand);font-size:29px;font-weight:700;line-height:1;margin-bottom:8px;display:flex;justify-content:space-between;align-items:baseline}
+.note .more{font-family:var(--sans);font-size:12px;font-weight:700;color:var(--ink2);text-decoration:underline}
+.note .row{padding:6px 0}
+.note .t{font-size:14.5px}
+.note input{background:rgba(255,255,255,.78);border-color:transparent;padding:9px 12px;font-size:14px}
+.note .inline button{background:rgba(255,255,255,.85)}
+.note .chk{background:#fff}
+.hello{font-family:var(--hand);font-size:38px;line-height:1;font-weight:700}
+.mini{font-size:13px;color:var(--ink2);line-height:1.4}
+.tm{font-weight:700;color:var(--ink2);font-size:12px;margin-right:5px}
+.gm{margin:6px 0 12px}
+.gm .top{display:flex;justify-content:space-between;gap:8px;font-size:14px;font-weight:700}
+.gm .bar{margin:6px 0 0;background:rgba(255,255,255,.75)}
+.wins{display:flex;gap:10px}
+.win{flex:1;background:rgba(255,255,255,.72);border-radius:16px;padding:12px 4px;text-align:center}
+.win b{font-family:var(--hand);font-size:36px;display:block;line-height:1}
+.win span{font-size:12px;color:var(--ink2)}
+.peek{display:flex;gap:10px;flex-wrap:wrap}
+.peek .p{width:66px;height:66px;border-radius:16px;overflow:hidden;display:grid;place-items:center;text-align:center;font-size:11px;font-weight:700;padding:5px;line-height:1.15;word-break:break-word}
+.peek img{width:100%;height:100%;object-fit:cover}
+
+.x svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;display:block}
+.calbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.pill{background:#fff;border:1px solid var(--line);border-radius:999px;padding:9px 16px;font-weight:700;font-size:13px}
+.pill:hover{background:var(--lilac)}
+.hint{font-size:12.5px;color:var(--ink2);margin-top:10px;line-height:1.45}
+.credit{font-size:11px;color:var(--ink2);text-align:center;margin-top:34px;line-height:1.5;opacity:.8}
+/* nav */
+nav{position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-top:1px solid var(--line);display:flex;justify-content:center;padding:6px 6px calc(6px + env(safe-area-inset-bottom))}
+nav button{flex:1;max-width:96px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:12px;font-weight:600;color:var(--ink2);padding:7px 0;border-radius:12px}
+nav button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+nav button.on{color:var(--ink);background:var(--lilac)}
+nav button.on svg{stroke:var(--gold)}
+
+/* section titles */
+.head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px}
+.head h2{font-family:var(--serif);font-size:30px;font-weight:600}
+.head small{display:block;font-family:var(--sans);font-size:13px;color:var(--ink2);font-weight:400;margin-top:2px}
+.add{background:var(--ink);color:#fff;border-radius:999px;padding:9px 18px;font-weight:700;font-size:14px;white-space:nowrap}
+.add:hover{background:#3B3E63}
+.empty{text-align:center;color:var(--ink2);padding:36px 20px;border:1.5px dashed var(--line);border-radius:18px;font-size:15px;line-height:1.5}
+.empty b{font-family:var(--serif);font-size:20px;display:block;color:var(--ink);margin-bottom:4px}
+.x{color:var(--ink2);font-size:18px;line-height:1;padding:4px 7px;border-radius:8px;opacity:.6}
+.x:hover{opacity:1;background:rgba(0,0,0,.06)}
+
+/* vision board */
+.board{columns:2;column-gap:14px}
+@media(min-width:620px){.board{columns:3}}
+.tile{break-inside:avoid;margin-bottom:14px;border-radius:16px;overflow:hidden;position:relative;border:1px solid rgba(42,44,74,.08)}
+.tile img{display:block;width:100%;height:auto}
+.tile .body{padding:14px 14px 16px}
+.tile h3{font-family:var(--serif);font-size:22px;line-height:1.15;font-weight:600}
+.tile p.n{font-size:13.5px;margin-top:6px;line-height:1.45;color:var(--ink2)}
+.tile p.v{font-family:var(--serif);font-style:italic;font-size:16px;margin-top:10px;padding-top:9px;border-top:1px solid rgba(42,44,74,.15)}
+.tile .x{position:absolute;top:6px;right:6px;background:rgba(255,255,255,.75)}
+
+/* goals */
+.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:14px}
+.cat{display:inline-block;font-size:12px;font-weight:700;color:var(--ink);padding:3px 11px;border-radius:999px;background:var(--lilac)}
+.goal h3{font-family:var(--serif);font-size:24px;font-weight:600;margin:9px 0 2px;line-height:1.15}
+.why{font-family:var(--serif);font-style:italic;font-size:16.5px;color:var(--ink2);line-height:1.35}
+.bar{height:7px;border-radius:9px;background:var(--lilac);margin:14px 0 4px;overflow:hidden}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--peri),var(--gold));border-radius:9px;transition:width .35s}
+.pct{font-size:12px;color:var(--ink2)}
+.row{display:flex;align-items:center;gap:10px;padding:8px 0}
+.row .t{flex:1;font-size:15px;line-height:1.35}
+.row.done .t{text-decoration:line-through;color:var(--ink2);opacity:.7}
+.chk{width:24px;height:24px;border-radius:50%;border:1.6px solid var(--peri);flex:none;display:grid;place-items:center;background:#fff}
+.chk svg{width:13px;height:13px;stroke:#fff;fill:none;stroke-width:3;opacity:0}
+.done .chk{background:var(--gold);border-color:var(--gold)}
+.done .chk svg{opacity:1}
+.inline{display:flex;gap:8px;margin-top:8px}
+.inline button{background:var(--lilac);border-radius:12px;padding:0 16px;font-weight:700;flex:none}
+.cardtop{display:flex;justify-content:space-between;align-items:flex-start}
+
+/* planner */
+.weekbar{display:flex;align-items:center;gap:6px;margin-bottom:12px}
+.weekbar .lbl{flex:1;text-align:center;font-weight:700;font-size:14px}
+.weekbar button{width:36px;height:36px;border-radius:50%;background:#fff;border:1px solid var(--line);font-size:18px}
+.days{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:18px}
+.day{display:flex;flex-direction:column;align-items:center;padding:9px 0;border-radius:14px;background:#fff;border:1px solid var(--line);font-size:12px;color:var(--ink2);position:relative}
+.day b{font-family:var(--serif);font-size:22px;color:var(--ink);font-weight:600;line-height:1.1}
+.day.on{background:var(--ink);color:#d8d9ee;border-color:var(--ink)}
+.day.on b{color:#fff}
+.day.today:not(.on){border-color:var(--gold)}
+.day .dot{width:5px;height:5px;border-radius:50%;background:var(--gold);margin-top:3px;visibility:hidden}
+.day.has .dot{visibility:visible}
+.focus{background:var(--t-gold);border-radius:16px;padding:14px 16px;margin-bottom:14px}
+.focus label{font-size:13px;font-weight:700;color:var(--gold);display:block;margin-bottom:6px}
+.focus input{background:rgba(255,255,255,.7);border-color:transparent}
+.time{font-size:13px;font-weight:700;color:var(--peri);width:62px;flex:none}
+
+/* todo */
+.group h4{font-family:var(--serif);font-size:20px;font-weight:600;margin:18px 0 2px;display:flex;align-items:center;gap:8px}
+.group h4 i{width:9px;height:9px;border-radius:50%;display:inline-block}
+.quick{display:flex;gap:8px;margin-bottom:6px}
+.quick select{width:auto;flex:none}
+.quick button{background:var(--ink);color:#fff;border-radius:12px;padding:0 18px;font-weight:700}
+.linkbtn{font-size:13px;color:var(--ink2);text-decoration:underline;margin-top:10px}
+
+/* faith */
+.two{display:grid;gap:14px}
+.ans .t{color:var(--ink2)}
+.ans .badge{font-size:11px;font-weight:700;background:var(--t-sage);padding:2px 9px;border-radius:99px}
+.when{font-size:12px;color:var(--ink2)}
+
+/* sheet */
+.scrim{position:fixed;inset:0;background:rgba(42,44,74,.4);z-index:40;display:none;align-items:flex-end;justify-content:center}
+.scrim.open{display:flex}
+.sheet{background:var(--mist);width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:24px 24px 0 0;padding:22px 20px calc(24px + env(safe-area-inset-bottom))}
+@media(min-width:620px){.scrim{align-items:center}.sheet{border-radius:24px}}
+.sheet h3{font-family:var(--serif);font-size:26px;margin-bottom:14px}
+.f{margin-bottom:13px}
+.f label{display:block;font-size:13px;font-weight:700;margin-bottom:5px;color:var(--ink2)}
+.swatches{display:flex;gap:9px}
+.sw{width:34px;height:34px;border-radius:50%;border:2px solid transparent}
+.sw.on{border-color:var(--ink)}
+.acts{display:flex;gap:10px;margin-top:6px}
+.acts button{flex:1;padding:12px;border-radius:14px;font-weight:700}
+.acts .ok{background:var(--ink);color:#fff}
+.acts .no{background:#fff;border:1px solid var(--line)}
+.preview{width:100%;max-height:150px;object-fit:cover;border-radius:12px;margin-top:8px;display:none}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">
+    <h1>Kairos</h1><span id="today"></span>
+  </div>
+  <div class="verse"><p id="verse"></p><div class="ref" id="ref"></div><button class="shuffle" data-a="shuffle">Another verse</button></div>
+  <main id="main"></main>
+  <p class="credit">Scripture quotations are taken from the Holy Bible, New Living Translation, copyright © 1996, 2004, 2015 by Tyndale House Foundation. Used by permission.</p>
+  <p class="credit"><button class="linkbtn" data-a="backup" style="margin:0 8px">Back up data</button><button class="linkbtn" data-a="restore" style="margin:0 8px">Restore backup</button></p>
+  <input type="file" id="restore" accept=".json,application/json" hidden>
+</div>
+
+<nav id="nav"></nav>
+
+<div class="scrim" id="scrim"><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
+
+<script>
+const VERSES=[
+["Commit your actions to the LORD, and your plans will succeed.","Proverbs 16:3"],
+["\u201CFor I know the plans I have for you,\u201D says the LORD. \u201CThey are plans for good and not for disaster, to give you a future and a hope.\u201D","Jeremiah 29:11"],
+["For I can do everything through Christ, who gives me strength.","Philippians 4:13"],
+["Take delight in the LORD, and he will give you your heart\u2019s desires.","Psalm 37:4"],
+["Trust in the LORD with all your heart; do not depend on your own understanding.","Proverbs 3:5"],
+["Don\u2019t be afraid, for I am with you. Don\u2019t be discouraged, for I am your God. I will strengthen you and help you.","Isaiah 41:10"],
+["So let\u2019s not get tired of doing what is good. At just the right time we will reap a harvest of blessing if we don\u2019t give up.","Galatians 6:9"],
+["We can make our plans, but the LORD determines our steps.","Proverbs 16:9"],
+["For everything there is a season, a time for every activity under heaven.","Ecclesiastes 3:1"],
+["Seek the Kingdom of God above all else, and live righteously, and he will give you everything you need.","Matthew 6:33"],
+["Be strong and courageous! Do not be afraid or discouraged. For the LORD your God is with you wherever you go.","Joshua 1:9"]
+];
+const CATS=["Faith","Family","Career","Health","Finance","Ministry","Personal"];
+const TINTS={peri:"var(--t-peri)",sage:"var(--t-sage)",blush:"var(--t-blush)",gold:"var(--t-gold)",lilac:"var(--t-lilac)",peach:"var(--t-peach)"};
+const TABS=[
+ ["home","Home",'<path d="M4 11l8-7 8 7v8a1 1 0 01-1 1h-4v-6H9v6H5a1 1 0 01-1-1z"/>'],
+ ["vision","Vision",'<path d="M12 3l2.2 5.3L20 9l-4.3 3.8L17 18.5 12 15.6 7 18.5l1.3-5.7L4 9l5.8-.7z"/>'],
+ ["goals","Goals",'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>'],
+ ["week","Week",'<rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/>'],
+ ["todo","To-do",'<path d="M5 12.5l4.5 4.5L19 7"/>'],
+ ["faith","Faith",'<path d="M12 21s-7-4.6-7-10a4 4 0 017-2.6A4 4 0 0119 11c0 5.4-7 10-7 10z"/>']
+];
+const uid=()=>Math.random().toString(36).slice(2,9);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const ymd=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+const CAL='<svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4M12 13v4M10 15h4"/></svg>';
+const CHECK='<svg viewBox="0 0 14 14"><path d="M2 7.5l3.2 3L12 3.5"/></svg>';
+
+let S={vision:[],goals:[],todos:[],plan:{},focus:{},gratitude:[],prayers:[],verse:null};
+let tab="home", weekOff=0, selDay=ymd(new Date()), showDone=false;
+
+/* ---------- storage (localStorage in the installed app; window.storage inside Claude) ---------- */
+const KEY="kairos-data";
+let saveT;
+function save(){clearTimeout(saveT);saveT=setTimeout(async()=>{const j=JSON.stringify(S);try{if(window.storage)await window.storage.set(KEY,j,false);else localStorage.setItem(KEY,j)}catch(e){console.error(e);if(e&&e.name==="QuotaExceededError")alert("Storage is full. Try removing a few photos from your vision board.")}},250)}
+async function load(){try{let j=null;if(window.storage){const r=await window.storage.get(KEY,false);j=r&&r.value}else j=localStorage.getItem(KEY);if(j)S=Object.assign(S,JSON.parse(j))}catch(e){}}
+
+/* ---------- calendar ---------- */
+const pad=n=>String(n).padStart(2,"0");
+const fmtL=d=>d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+"T"+pad(d.getHours())+pad(d.getMinutes())+"00";
+function evtTimes(day,time){
+  if(!time){const n=new Date(day+"T00:00");n.setDate(n.getDate()+1);return{allDay:true,s:day.replace(/-/g,""),e:ymd(n).replace(/-/g,"")}}
+  const st=new Date(day+"T"+time+":00"),en=new Date(st.getTime()+36e5);return{allDay:false,s:fmtL(st),e:fmtL(en)};
+}
+const icsEsc=t=>String(t).replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\n/g,"\\n");
+function buildICS(days){
+  const stamp=new Date().toISOString().replace(/[-:]/g,"").split(".")[0]+"Z";
+  const L=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Kairos//Faith Planner//EN","CALSCALE:GREGORIAN","X-WR-CALNAME:Kairos"];
+  let n=0;
+  days.forEach(day=>(S.plan[day]||[]).forEach(it=>{
+    const ev=evtTimes(day,it.time);n++;
+    L.push("BEGIN:VEVENT","UID:"+it.id+"@kairos","DTSTAMP:"+stamp,
+      ev.allDay?"DTSTART;VALUE=DATE:"+ev.s:"DTSTART:"+ev.s,
+      ev.allDay?"DTEND;VALUE=DATE:"+ev.e:"DTEND:"+ev.e,
+      "SUMMARY:"+icsEsc(it.t));
+    if(S.focus[day])L.push("DESCRIPTION:"+icsEsc("Focus: "+S.focus[day]));
+    if(!ev.allDay)L.push("BEGIN:VALARM","TRIGGER:-PT10M","ACTION:DISPLAY","DESCRIPTION:Reminder","END:VALARM");
+    L.push("END:VEVENT");
+  }));
+  L.push("END:VCALENDAR");
+  return {text:L.join("\r\n"),count:n};
+}
+function download(name,text,type){
+  const blob=new Blob([text],{type});
+  try{const f=new File([blob],name,{type});
+    if(matchMedia("(pointer:coarse)").matches&&navigator.canShare&&navigator.canShare({files:[f]})){navigator.share({files:[f]}).catch(()=>{});return}}catch(e){}
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},800);
+}
+function exportDays(days,name){
+  const r=buildICS(days);
+  if(!r.count){alert("No planner items to export yet.");return}
+  download(name,r.text,"text/calendar");
+}
+
+/* ---------- verse ---------- */
+function verseIdx(){if(S.verse&&S.verse.d===ymd(new Date()))return S.verse.i;const n=new Date();return Math.floor(n/864e5)%VERSES.length}
+function showVerse(){const v=VERSES[verseIdx()];document.getElementById("verse").textContent=v[0];document.getElementById("ref").textContent=v[1]+" (NLT)"}
+
+/* ---------- sheet ---------- */
+function openSheet(title,fields,onSave){
+  const vals={};
+  const sh=document.getElementById("sheet");
+  sh.innerHTML='<h3>'+esc(title)+'</h3>'+fields.map(f=>{
+    vals[f.k]=f.def??(f.type==="color"?"peri":"");
+    let inp="";
+    if(f.type==="textarea")inp=`<textarea data-k="${f.k}" placeholder="${esc(f.ph||"")}"></textarea>`;
+    else if(f.type==="select")inp=`<select data-k="${f.k}">${f.options.map(o=>`<option>${esc(o)}</option>`).join("")}</select>`;
+    else if(f.type==="color")inp=`<div class="swatches">${Object.keys(TINTS).map(c=>`<button class="sw ${c===vals[f.k]?"on":""}" data-c="${c}" style="background:${TINTS[c]}" aria-label="${c}"></button>`).join("")}</div>`;
+    else if(f.type==="image")inp=`<input type="file" accept="image/*" data-img="${f.k}"><img class="preview" id="pv-${f.k}" alt="">`;
+    else inp=`<input type="${f.type||"text"}" data-k="${f.k}" placeholder="${esc(f.ph||"")}">`;
+    return `<div class="f"><label>${esc(f.label)}</label>${inp}</div>`;
+  }).join("")+'<div class="acts"><button class="no" id="sh-no">Cancel</button><button class="ok" id="sh-ok">Save</button></div>';
+  sh.querySelectorAll("[data-k]").forEach(el=>{const f=fields.find(x=>x.k===el.dataset.k);if(f&&f.def)el.value=f.def;el.addEventListener("input",()=>vals[el.dataset.k]=el.value);if(el.tagName==="SELECT")vals[el.dataset.k]=el.value});
+  sh.querySelectorAll(".sw").forEach(b=>b.onclick=()=>{sh.querySelectorAll(".sw").forEach(x=>x.classList.remove("on"));b.classList.add("on");vals.color=b.dataset.c});
+  sh.querySelectorAll("[data-img]").forEach(inp=>inp.onchange=()=>{
+    const file=inp.files[0];if(!file)return;const rd=new FileReader();
+    rd.onload=()=>{const im=new Image();im.onload=()=>{const m=640,r=Math.min(1,m/Math.max(im.width,im.height));const c=document.createElement("canvas");c.width=im.width*r;c.height=im.height*r;c.getContext("2d").drawImage(im,0,0,c.width,c.height);const u=c.toDataURL("image/jpeg",.72);vals[inp.dataset.img]=u;const p=document.getElementById("pv-"+inp.dataset.img);p.src=u;p.style.display="block"};im.src=rd.result};rd.readAsDataURL(file)});
+  document.getElementById("sh-no").onclick=closeSheet;
+  document.getElementById("sh-ok").onclick=()=>{onSave(vals);closeSheet();save();render()};
+  document.getElementById("scrim").classList.add("open");
+  const first=sh.querySelector("input[data-k],textarea");if(first)first.focus();
+}
+function closeSheet(){document.getElementById("scrim").classList.remove("open")}
+document.getElementById("scrim").addEventListener("click",e=>{if(e.target.id==="scrim")closeSheet()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeSheet()});
+
+/* ---------- views ---------- */
+
+function vHome(){
+  const now=new Date(),h=now.getHours(),td=ymd(now);
+  const hi=h<12?"Good morning":h<18?"Good afternoon":"Good evening";
+  const plan=(S.plan[td]||[]).slice().sort((a,b)=>(a.time||"99").localeCompare(b.time||"99"));
+  const todayTodos=S.todos.filter(t=>!t.d&&t.p==="today");
+  const otherOpen=S.todos.filter(t=>!t.d&&t.p!=="today").length;
+  const stepsDone=S.goals.reduce((n,g)=>n+g.steps.filter(s=>s.d).length,0);
+  const answered=S.prayers.filter(p=>p.a).length, tasksDone=S.todos.filter(t=>t.d).length;
+  const more=(t,l)=>`<button class="more" data-a="tab" data-t="${t}">${l||"Open"}</button>`;
+  return `<div class="notes">
+  <div class="note wide n-butter">
+    <div class="hello">${hi}!</div>
+    <div class="mini">${now.toLocaleDateString("en",{weekday:"long",month:"long",day:"numeric"})}</div>
+    <div style="margin-top:12px"><div class="mini" style="font-weight:700;margin-bottom:5px">Today’s focus</div>
+    <input data-focus="${td}" value="${esc(S.focus[td]||"")}" placeholder="What matters most today?"></div>
+  </div>
+
+  <div class="note n-sky"><h3>Today’s plan ${more("week")}</h3>
+    ${plan.length?plan.slice(0,6).map(it=>`<div class="row ${it.d?"done":""}"><button class="chk" data-a="togPlan" data-day="${td}" data-id="${it.id}" aria-label="Toggle">${CHECK}</button><span class="t">${it.time?`<span class="tm">${esc(it.time)}</span>`:""}${esc(it.t)}</span></div>`).join(""):`<div class="mini">Nothing scheduled yet. Add something on the Week tab.</div>`}
+  </div>
+
+  <div class="note n-pink"><h3>To-do today ${more("todo")}</h3>
+    ${todayTodos.slice(0,5).map(t=>`<div class="row"><button class="chk" data-a="togTodo" data-id="${t.id}" aria-label="Complete">${CHECK}</button><span class="t">${esc(t.t)}</span></div>`).join("")||`<div class="mini">All clear. Enjoy the rest.</div>`}
+    ${otherOpen?`<div class="mini" style="margin-top:4px">+ ${otherOpen} more later</div>`:""}
+    <div class="inline"><input placeholder="Add a task" data-todoin><button data-a="addTodo">Add</button></div>
+  </div>
+
+  <div class="note wide n-mint"><h3>Goals ${more("goals")}</h3>
+    ${S.goals.length?S.goals.slice(0,3).map(g=>{const d=g.steps.filter(s=>s.d).length,p=g.steps.length?Math.round(d/g.steps.length*100):0;return `<div class="gm"><div class="top"><span>${esc(g.title)}</span><span>${p}%</span></div><div class="bar"><i style="width:${p}%"></i></div></div>`}).join(""):`<div class="mini">Add a goal and break it into small steps.</div>`}
+  </div>
+
+  <div class="note n-peach"><h3>Thankful for</h3>
+    ${S.gratitude.slice(0,2).map(g=>`<div class="row"><span class="t">${esc(g.t)}</span></div>`).join("")||`<div class="mini">Count one blessing today.</div>`}
+    <div class="inline"><input placeholder="Thank You, Lord…" data-gratin><button data-a="addGrat">Add</button></div>
+  </div>
+
+  <div class="note n-lav"><h3>Praying for</h3>
+    ${S.prayers.filter(p=>!p.a).slice(0,3).map(p=>`<div class="row"><button class="chk" data-a="togPray" data-id="${p.id}" aria-label="Mark answered">${CHECK}</button><span class="t">${esc(p.t)}</span></div>`).join("")||`<div class="mini">Add a prayer request.</div>`}
+    <div class="inline"><input placeholder="Lord, I pray for…" data-prayin><button data-a="addPray">Add</button></div>
+  </div>
+
+  <div class="note n-sky"><h3>Little wins</h3>
+    <div class="wins"><div class="win"><b>${tasksDone}</b><span>tasks</span></div><div class="win"><b>${stepsDone}</b><span>steps</span></div><div class="win"><b>${answered}</b><span>answered</span></div></div>
+  </div>
+
+  <div class="note n-butter"><h3>Vision board ${more("vision")}</h3>
+    ${S.vision.length?`<div class="peek">${S.vision.slice(0,5).map(v=>`<div class="p" style="background:${TINTS[v.color]||TINTS.peri}">${v.img?`<img src="${v.img}" alt="">`:esc(v.title)}</div>`).join("")}</div>`:`<div class="mini">Pin your first dream on the board.</div>`}
+  </div>
+  </div>`;
+}
+function vVision(){
+  const add=`<button class="add" data-a="addVision">+ Add to board</button>`;
+  const head=`<div class="head"><h2>Vision board<small>Write the vision. Pray over it. Walk toward it.</small></h2>${add}</div>`;
+  if(!S.vision.length)return head+`<div class="empty"><b>Your board is waiting</b>Add a dream, a photo, a verse you’re standing on. Start with one.</div>`;
+  return head+`<div class="board">${S.vision.map((v,i)=>`
+   <div class="tile" style="background:${TINTS[v.color]||TINTS.peri}">
+     <button class="x" data-a="delVision" data-id="${v.id}" aria-label="Remove">×</button>
+     ${v.img?`<img src="${v.img}" alt="">`:""}
+     <div class="body"><h3>${esc(v.title)}</h3>${v.note?`<p class="n">${esc(v.note)}</p>`:""}${v.verse?`<p class="v">${esc(v.verse)}</p>`:""}</div>
+   </div>`).join("")}</div>`;
+}
+function vGoals(){
+  const head=`<div class="head"><h2>Goals<small>Small steps, done in faith.</small></h2><button class="add" data-a="addGoal">+ New goal</button></div>`;
+  if(!S.goals.length)return head+`<div class="empty"><b>No goals yet</b>Name one thing you’re believing God for this season, then break it into steps.</div>`;
+  return head+S.goals.map(g=>{
+    const done=g.steps.filter(s=>s.d).length,p=g.steps.length?Math.round(done/g.steps.length*100):0;
+    return `<div class="card goal"><div class="cardtop"><span class="cat">${esc(g.cat)}</span><button class="x" data-a="delGoal" data-id="${g.id}" aria-label="Delete goal">×</button></div>
+     <h3>${esc(g.title)}</h3>${g.why?`<div class="why">${esc(g.why)}</div>`:""}
+     <div class="bar"><i style="width:${p}%"></i></div><div class="pct">${done} of ${g.steps.length} steps · ${p}%</div>
+     ${g.steps.map(s=>`<div class="row ${s.d?"done":""}"><button class="chk" data-a="togStep" data-id="${g.id}" data-s="${s.id}" aria-label="Toggle step">${CHECK}</button><span class="t">${esc(s.t)}</span><button class="x" data-a="delStep" data-id="${g.id}" data-s="${s.id}" aria-label="Remove step">×</button></div>`).join("")}
+     <div class="inline"><input placeholder="Add a step" data-stepin="${g.id}"><button data-a="addStep" data-id="${g.id}">Add</button></div></div>`}).join("");
+}
+function weekDays(){
+  const n=new Date(),dow=(n.getDay()+6)%7,s=new Date(n.getFullYear(),n.getMonth(),n.getDate()-dow+weekOff*7);
+  return [...Array(7)].map((_,i)=>new Date(s.getFullYear(),s.getMonth(),s.getDate()+i));
+}
+function vWeek(){
+  const ds=weekDays(),td=ymd(new Date()),names=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  const f=ds[0],l=ds[6],fmt=d=>d.toLocaleDateString("en",{month:"short",day:"numeric"});
+  const items=(S.plan[selDay]||[]).slice().sort((a,b)=>(a.time||"99").localeCompare(b.time||"99"));
+  const sd=new Date(selDay+"T00:00");
+  return `<div class="head"><h2>Weekly planner<small>Plan your steps; the Lord directs them.</small></h2></div>
+  <div class="weekbar"><button data-a="wk" data-n="-1" aria-label="Previous week">‹</button><div class="lbl">${fmt(f)} – ${fmt(l)}</div><button data-a="wk" data-n="1" aria-label="Next week">›</button></div>
+  <div class="days">${ds.map((d,i)=>{const k=ymd(d);return `<button class="day ${k===selDay?"on":""} ${k===td?"today":""} ${(S.plan[k]||[]).length?"has":""}" data-a="selDay" data-d="${k}"><span>${names[i]}</span><b>${d.getDate()}</b><span class="dot"></span></button>`}).join("")}</div>
+  <div class="focus"><label>${sd.toLocaleDateString("en",{weekday:"long"})}’s focus</label><input data-focus="${selDay}" value="${esc(S.focus[selDay]||"")}" placeholder="What matters most today?"></div>
+  <div class="card">${items.length?items.map(it=>`<div class="row ${it.d?"done":""}"><button class="chk" data-a="togPlan" data-id="${it.id}" aria-label="Toggle">${CHECK}</button><span class="time">${esc(it.time||"Anytime")}</span><span class="t">${esc(it.t)}</span><button class="x" data-a="gcal" data-id="${it.id}" aria-label="Add to Google Calendar" title="Add to Google Calendar">${CAL}</button><button class="x" data-a="delPlan" data-id="${it.id}" aria-label="Remove">×</button></div>`).join(""):`<div class="pct" style="padding:6px 0">Nothing planned yet for this day.</div>`}
+   <div class="inline"><input type="time" data-plantime style="width:120px;flex:none"><input placeholder="Add to this day" data-planin><button data-a="addPlan">Add</button></div></div>
+  <div class="calbar"><button class="pill" data-a="expWeek">Export this week (.ics)</button><button class="pill" data-a="expAll">Export all (.ics)</button></div>
+  <p class="hint">Tap the calendar icon on any item to add it to Google Calendar. Export an .ics file to add items to Apple Calendar, Outlook, or any other calendar.</p>`;
+}
+const GROUPS=[["today","Today","var(--gold)"],["week","This week","var(--peri)"],["later","Someday","var(--sage)"]];
+function vTodo(){
+  const open=S.todos.filter(t=>!t.d),done=S.todos.filter(t=>t.d);
+  let h=`<div class="head"><h2>To-do<small>Faithful in little, faithful in much.</small></h2></div>
+  <div class="quick"><input placeholder="Add a task" data-todoin><select data-todopri>${GROUPS.map(g=>`<option value="${g[0]}">${g[1]}</option>`).join("")}</select><button data-a="addTodo">Add</button></div>`;
+  if(!S.todos.length)h+=`<div class="empty" style="margin-top:14px"><b>All clear</b>Add your first task above.</div>`;
+  GROUPS.forEach(g=>{const l=open.filter(t=>t.p===g[0]);if(!l.length)return;
+    h+=`<div class="group"><h4><i style="background:${g[2]}"></i>${g[1]}</h4>${l.map(t=>`<div class="row"><button class="chk" data-a="togTodo" data-id="${t.id}" aria-label="Complete">${CHECK}</button><span class="t">${esc(t.t)}</span><button class="x" data-a="delTodo" data-id="${t.id}" aria-label="Delete">×</button></div>`).join("")}</div>`});
+  if(done.length){h+=`<button class="linkbtn" data-a="togShow">${showDone?"Hide":"Show"} ${done.length} completed</button> <button class="linkbtn" data-a="clearDone" style="margin-left:12px">Clear completed</button>`;
+    if(showDone)h+=done.map(t=>`<div class="row done"><button class="chk" data-a="togTodo" data-id="${t.id}">${CHECK}</button><span class="t">${esc(t.t)}</span></div>`).join("")}
+  return h;
+}
+function vFaith(){
+  const today=ymd(new Date());
+  return `<div class="head"><h2>Faith<small>Give thanks. Bring everything to Him.</small></h2></div>
+  <div class="two">
+   <div class="card"><h3 style="font-family:var(--serif);font-size:23px;margin-bottom:4px">Gratitude</h3>
+    ${S.gratitude.slice(0,8).map(g=>`<div class="row"><span class="t">${esc(g.t)}<br><span class="when">${esc(g.date)}</span></span><button class="x" data-a="delGrat" data-id="${g.id}" aria-label="Delete">×</button></div>`).join("")||`<div class="pct" style="padding:6px 0">What are you thankful for today?</div>`}
+    <div class="inline"><input placeholder="Thank You, Lord, for…" data-gratin><button data-a="addGrat">Add</button></div></div>
+   <div class="card"><h3 style="font-family:var(--serif);font-size:23px;margin-bottom:4px">Prayer list</h3>
+    ${S.prayers.map(p=>`<div class="row ${p.a?"done ans":""}"><button class="chk" data-a="togPray" data-id="${p.id}" aria-label="Mark answered">${CHECK}</button><span class="t">${esc(p.t)} ${p.a?'<span class="badge">Answered</span>':""}</span><button class="x" data-a="delPray" data-id="${p.id}" aria-label="Delete">×</button></div>`).join("")||`<div class="pct" style="padding:6px 0">Add a request. Check it off when God answers.</div>`}
+    <div class="inline"><input placeholder="Lord, I pray for…" data-prayin><button data-a="addPray">Add</button></div></div>
+  </div>`;
+}
+function render(){
+  document.getElementById("nav").innerHTML=TABS.map(t=>`<button class="${tab===t[0]?"on":""}" data-a="tab" data-t="${t[0]}"><svg viewBox="0 0 24 24">${t[2]}</svg>${t[1]}</button>`).join("");
+  document.getElementById("main").innerHTML=({home:vHome,vision:vVision,goals:vGoals,week:vWeek,todo:vTodo,faith:vFaith})[tab]();
+}
+
+/* ---------- actions ---------- */
+const $=s=>document.querySelector(s);
+const A={
+ tab:d=>{tab=d.t;render();window.scrollTo({top:0,behavior:"smooth"})},
+ gcal:d=>{const day=d.day||selDay;const it=(S.plan[day]||[]).find(x=>x.id===d.id);if(!it)return;const ev=evtTimes(day,it.time);
+   const url="https://calendar.google.com/calendar/render?action=TEMPLATE&text="+encodeURIComponent(it.t)+"&dates="+ev.s+"/"+ev.e+"&details="+encodeURIComponent("Added from Kairos"+(S.focus[day]?"\nFocus: "+S.focus[day]:""));
+   window.open(url,"_blank","noopener")},
+ expWeek:()=>exportDays(weekDays().map(ymd),"kairos-week.ics"),
+ expAll:()=>exportDays(Object.keys(S.plan).sort(),"kairos-planner.ics"),
+ backup:()=>download("kairos-backup.json",JSON.stringify(S),"application/json"),
+ restore:()=>document.getElementById("restore").click(),
+ shuffle:()=>{S.verse={d:ymd(new Date()),i:(verseIdx()+1)%VERSES.length};showVerse();save()},
+ addVision:()=>openSheet("Add to your board",[
+   {k:"title",label:"Dream or declaration",ph:"e.g. A home filled with peace"},
+   {k:"note",label:"Details (optional)",type:"textarea"},
+   {k:"verse",label:"Verse or promise (optional)",ph:"e.g. Psalm 37:4"},
+   {k:"img",label:"Photo (optional)",type:"image"},
+   {k:"color",label:"Color",type:"color"}],
+   v=>{if(!v.title.trim()&&!v.img)return;S.vision.unshift({id:uid(),title:v.title.trim(),note:v.note.trim(),verse:v.verse.trim(),img:v.img||"",color:v.color||"peri"})}),
+ delVision:d=>{S.vision=S.vision.filter(x=>x.id!==d.id);save();render()},
+ addGoal:()=>openSheet("New goal",[
+   {k:"title",label:"Goal",ph:"e.g. Read the whole Bible this year"},
+   {k:"cat",label:"Area of life",type:"select",options:CATS},
+   {k:"why",label:"Why / the promise behind it",type:"textarea",ph:"A verse or reason that keeps you going"}],
+   v=>{if(!v.title.trim())return;S.goals.unshift({id:uid(),title:v.title.trim(),cat:v.cat||CATS[0],why:v.why.trim(),steps:[]})}),
+ delGoal:d=>{if(confirm("Delete this goal?")){S.goals=S.goals.filter(x=>x.id!==d.id);save();render()}},
+ addStep:d=>{const i=$(`[data-stepin="${d.id}"]`);const t=i.value.trim();if(!t)return;S.goals.find(g=>g.id===d.id).steps.push({id:uid(),t,d:false});save();render()},
+ togStep:d=>{const s=S.goals.find(g=>g.id===d.id).steps.find(s=>s.id===d.s);s.d=!s.d;save();render()},
+ delStep:d=>{const g=S.goals.find(g=>g.id===d.id);g.steps=g.steps.filter(s=>s.id!==d.s);save();render()},
+ wk:d=>{weekOff+=+d.n;render()},
+ selDay:d=>{selDay=d.d;render()},
+ addPlan:()=>{const t=$("[data-planin]").value.trim();if(!t)return;(S.plan[selDay]=S.plan[selDay]||[]).push({id:uid(),t,time:$("[data-plantime]").value,d:false});save();render()},
+ togPlan:d=>{const it=S.plan[d.day||selDay].find(x=>x.id===d.id);it.d=!it.d;save();render()},
+ delPlan:d=>{S.plan[selDay]=S.plan[selDay].filter(x=>x.id!==d.id);save();render()},
+ addTodo:()=>{const t=$("[data-todoin]").value.trim();if(!t)return;const sel=$("[data-todopri]");S.todos.push({id:uid(),t,p:sel?sel.value:"today",d:false});save();render();$("[data-todoin]").focus()},
+ togTodo:d=>{const t=S.todos.find(x=>x.id===d.id);t.d=!t.d;save();render()},
+ delTodo:d=>{S.todos=S.todos.filter(x=>x.id!==d.id);save();render()},
+ togShow:()=>{showDone=!showDone;render()},
+ clearDone:()=>{S.todos=S.todos.filter(t=>!t.d);save();render()},
+ addGrat:()=>{const t=$("[data-gratin]").value.trim();if(!t)return;S.gratitude.unshift({id:uid(),t,date:new Date().toLocaleDateString("en",{month:"short",day:"numeric"})});save();render()},
+ delGrat:d=>{S.gratitude=S.gratitude.filter(x=>x.id!==d.id);save();render()},
+ addPray:()=>{const t=$("[data-prayin]").value.trim();if(!t)return;S.prayers.unshift({id:uid(),t,a:false});save();render()},
+ togPray:d=>{const p=S.prayers.find(x=>x.id===d.id);p.a=!p.a;save();render()},
+ delPray:d=>{S.prayers=S.prayers.filter(x=>x.id!==d.id);save();render()}
+};
+document.addEventListener("click",e=>{const b=e.target.closest("[data-a]");if(b&&A[b.dataset.a])A[b.dataset.a](b.dataset)});
+document.addEventListener("keydown",e=>{
+  if(e.key!=="Enter")return;const t=e.target;
+  const map={stepin:"addStep",planin:"addPlan",todoin:"addTodo",gratin:"addGrat",prayin:"addPray"};
+  for(const k in map){if(t.hasAttribute("data-"+k)){A[map[k]]({id:t.getAttribute("data-"+k)});return}}
+});
+document.addEventListener("input",e=>{const t=e.target;if(t.hasAttribute&&t.hasAttribute("data-focus")){S.focus[t.getAttribute("data-focus")]=t.value;save()}});
+
+document.getElementById("restore").addEventListener("change",e=>{
+  const f=e.target.files[0];if(!f)return;const r=new FileReader();
+  r.onload=()=>{try{const d=JSON.parse(r.result);if(!confirm("Replace everything in this app with the backup?"))return;S=Object.assign({vision:[],goals:[],todos:[],plan:{},focus:{},gratitude:[],prayers:[],verse:null},d);save();render()}catch(err){alert("That file isn’t a valid Kairos backup.")}};
+  r.readAsText(f);e.target.value="";
+});
+if("serviceWorker" in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("sw.js").catch(()=>{});
+(async()=>{
+  document.getElementById("today").textContent=new Date().toLocaleDateString("en",{weekday:"long",month:"long",day:"numeric"});
+  await load();showVerse();render();
+})();
+</script>
+</body>
+</html>
