@@ -81,6 +81,28 @@ textarea{resize:vertical;min-height:70px}
 .pill{background:#fff;border:1px solid var(--line);border-radius:999px;padding:9px 16px;font-weight:700;font-size:13px}
 .pill:hover{background:var(--lilac)}
 .hint{font-size:12.5px;color:var(--ink2);margin-top:10px;line-height:1.45}
+.hdr{display:flex;gap:6px;margin-left:10px}
+.chip{background:#fff;border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:700}
+.chip .bd{background:var(--gold);color:#fff;border-radius:99px;padding:1px 7px;margin-left:6px;font-size:11px}
+#gate{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;padding:20px;overflow:auto;background:radial-gradient(rgba(143,156,203,.24) 1.2px,transparent 1.7px) 0 0/22px 22px,linear-gradient(180deg,#EDE8FA 0,#F7F3FB 50%,#FDEEF0 100%)}
+#gate.on{display:flex}
+.gcard{width:100%;max-width:380px;background:#fff;border-radius:26px;padding:28px 24px;box-shadow:0 20px 40px -20px rgba(42,44,74,.4);border:1.5px dashed #CDC3EA}
+.gbrand{font-family:var(--serif);font-size:38px;font-weight:600;text-align:center;line-height:1.1}
+.gsub{text-align:center;color:var(--ink2);font-size:14px;margin:6px 0 18px;line-height:1.5}
+.gmsg{min-height:20px;font-size:13px;color:#B0405A;margin-bottom:8px}
+.gcard .add{width:100%;padding:13px}
+.glinks{display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-top:12px}
+.glinks .linkbtn{margin-top:0}
+.setup{background:var(--t-gold);border-radius:14px;padding:12px 14px;margin-bottom:12px;font-size:13px;display:grid;gap:6px}
+.setup code{word-break:break-all;background:#fff;border-radius:8px;padding:6px 8px;font-size:12px}
+.ph{font-family:var(--serif);font-size:20px;margin:14px 0 2px}
+.req{display:flex;align-items:center;gap:8px;padding:10px 0;border-top:1px solid var(--line)}
+.req .who{flex:1;min-width:0}
+.req .who b{display:block;font-size:14.5px}
+.req .who span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sm{border-radius:999px;padding:7px 13px;font-weight:700;font-size:13px}
+.sm.yes{background:var(--t-sage)}
+.sm.no{background:var(--t-blush)}
 .credit{font-size:11px;color:var(--ink2);text-align:center;margin-top:34px;line-height:1.5;opacity:.8}
 /* nav */
 nav{position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-top:1px solid var(--line);display:flex;justify-content:center;padding:6px 6px calc(6px + env(safe-area-inset-bottom))}
@@ -183,7 +205,7 @@ nav button.on svg{stroke:var(--gold)}
 <body>
 <div class="wrap">
   <div class="brand">
-    <h1>Kairos</h1><span id="today"></span>
+    <h1>Kairos</h1><span id="today"></span><div class="hdr" id="hdr"></div>
   </div>
   <div class="verse"><p id="verse"></p><div class="ref" id="ref"></div><button class="shuffle" data-a="shuffle">Another verse</button></div>
   <main id="main"></main>
@@ -194,9 +216,15 @@ nav button.on svg{stroke:var(--gold)}
 
 <nav id="nav"></nav>
 
+<div id="gate"></div>
 <div class="scrim" id="scrim"><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
 
 <script>
+/* ========= SETUP: paste your Firebase details here (see README) ========= */
+const FIREBASE_CONFIG={apiKey:"PASTE_API_KEY",authDomain:"PASTE_AUTH_DOMAIN",projectId:"PASTE_PROJECT_ID",storageBucket:"PASTE_STORAGE_BUCKET",messagingSenderId:"PASTE_SENDER_ID",appId:"PASTE_APP_ID"};
+const ADMIN_UID=""; // your own user ID, shown on the "Almost there" screen after you first sign up
+/* ======================================================================== */
+const CLOUD=!FIREBASE_CONFIG.apiKey.startsWith("PASTE");
 const VERSES=[
 ["Commit your actions to the LORD, and your plans will succeed.","Proverbs 16:3"],
 ["\u201CFor I know the plans I have for you,\u201D says the LORD. \u201CThey are plans for good and not for disaster, to give you a future and a hope.\u201D","Jeremiah 29:11"],
@@ -232,8 +260,140 @@ let tab="home", weekOff=0, selDay=ymd(new Date()), showDone=false;
 /* ---------- storage (localStorage in the installed app; window.storage inside Claude) ---------- */
 const KEY="kairos-data";
 let saveT;
-function save(){clearTimeout(saveT);saveT=setTimeout(async()=>{const j=JSON.stringify(S);try{if(window.storage)await window.storage.set(KEY,j,false);else localStorage.setItem(KEY,j)}catch(e){console.error(e);if(e&&e.name==="QuotaExceededError")alert("Storage is full. Try removing a few photos from your vision board.")}},250)}
+function save(){clearTimeout(saveT);if(CLOUD){saveT=setTimeout(pushMain,400);return}saveT=setTimeout(async()=>{const j=JSON.stringify(S);try{if(window.storage)await window.storage.set(KEY,j,false);else localStorage.setItem(KEY,j)}catch(e){console.error(e);if(e&&e.name==="QuotaExceededError")alert("Storage is full. Try removing a few photos from your vision board.")}},250)}
 async function load(){try{let j=null;if(window.storage){const r=await window.storage.get(KEY,false);j=r&&r.value}else j=localStorage.getItem(KEY);if(j)S=Object.assign(S,JSON.parse(j))}catch(e){}}
+
+/* ---------- cloud: login, approval, sync (Firebase) ---------- */
+const FBU=m=>"https://www.gstatic.com/firebasejs/10.12.2/firebase-"+m+".js";
+let fb={},auth,db,me=null,isAdmin=false,profiles=[],imgs={},syncOn=false,loaded=false,firstSnap=true,pendingRender=false,panelMode=null,signingUp=false,authMode="login",unsubs={};
+const DEVICE=Math.random().toString(36).slice(2);
+const blank=()=>({vision:[],goals:[],todos:[],plan:{},focus:{},gratitude:[],prayers:[],verse:null});
+const imgOf=v=>imgs[v.id]||v.img||"";
+const typing=()=>{const a=document.activeElement;return !!a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)};
+
+function showGate(html){const g=document.getElementById("gate");g.innerHTML='<div class="gcard">'+html+'</div>';g.classList.add("on")}
+function hideGate(){document.getElementById("gate").classList.remove("on")}
+function gateLoading(t){showGate('<div class="gbrand">Kairos</div><p class="gsub" style="margin-bottom:0">'+esc(t||"Loading your planner…")+'</p>')}
+function gatePending(){showGate('<div class="gbrand">Almost there</div><p class="gsub">Your request is waiting for the admin’s approval. This page opens automatically once you’re approved.</p>'+(ADMIN_UID||!me?"":'<div class="setup"><b>Admin setup</b><span>Your user ID:</span><code>'+esc(me.uid)+'</code><button class="pill" data-a="copyUid">Copy ID</button></div>')+'<div class="glinks"><button class="linkbtn" data-a="signOut">Sign out</button></div>')}
+function gateRejected(){showGate('<div class="gbrand">Access not granted</div><p class="gsub">Your request wasn’t approved. If you think this is a mistake, please contact the admin.</p><div class="glinks"><button class="linkbtn" data-a="signOut">Sign out</button></div>')}
+function showAuth(msg){
+  const su=authMode==="signup";
+  showGate('<div class="gbrand">Kairos</div><p class="gsub">'+(su?"Request access to the planner":"Welcome back")+'</p>'
+   +(su?'<div class="f"><label>Your name</label><input id="gname" autocomplete="name"></div>':'')
+   +'<div class="f"><label>Email</label><input id="gemail" type="email" autocomplete="email" inputmode="email"></div>'
+   +'<div class="f"><label>Password</label><input id="gpass" type="password" autocomplete="'+(su?"new-password":"current-password")+'"></div>'
+   +'<div class="gmsg" id="gmsg">'+esc(msg||"")+'</div>'
+   +'<button class="add" data-a="doAuth">'+(su?"Request access":"Log in")+'</button>'
+   +(su?'<p class="hint">The admin will review your request before you can open the app.</p>':'')
+   +'<div class="glinks"><button class="linkbtn" data-a="toggleAuth">'+(su?"I already have an account":"New here? Request access")+'</button>'+(su?"":'<button class="linkbtn" data-a="forgot">Forgot password?</button>')+'</div>');
+}
+function authErr(e){const c=(e&&e.code)||"";
+  if(["auth/invalid-credential","auth/wrong-password","auth/user-not-found","auth/invalid-login-credentials"].includes(c))return "Incorrect email or password.";
+  if(c==="auth/email-already-in-use")return "That email already has an account. Try logging in.";
+  if(c==="auth/weak-password")return "Please use a password with at least 6 characters.";
+  if(c==="auth/invalid-email")return "That email doesn’t look right.";
+  if(c==="auth/too-many-requests")return "Too many tries. Please wait a moment and try again.";
+  if(c==="auth/network-request-failed")return "No connection. Please check your internet.";
+  if(c==="auth/operation-not-allowed")return "Email sign-in isn’t switched on in Firebase yet.";
+  return "Something went wrong. Please try again."}
+const setMsg=t=>{const m=document.getElementById("gmsg");if(m)m.textContent=t};
+
+async function initCloud(){
+  gateLoading();
+  const [a,au,fs]=await Promise.all([import(FBU("app")),import(FBU("auth")),import(FBU("firestore"))]);
+  fb=Object.assign({},a,au,fs);
+  const app=fb.initializeApp(FIREBASE_CONFIG);
+  auth=fb.getAuth(app);
+  db=fb.initializeFirestore(app,{localCache:fb.persistentLocalCache({tabManager:fb.persistentMultipleTabManager()})});
+  fb.onAuthStateChanged(auth,onUser);
+}
+function stopSync(){["main","imgs"].forEach(k=>{if(unsubs[k]){unsubs[k]();delete unsubs[k]}});syncOn=false;loaded=false;firstSnap=true;S=blank();imgs={}}
+function stopAll(){Object.values(unsubs).forEach(f=>f&&f());unsubs={};syncOn=false;loaded=false;firstSnap=true}
+function onUser(user){
+  stopAll();profiles=[];panelMode=null;
+  if(!user){me=null;isAdmin=false;S=blank();imgs={};updateHdr();closeSheet();showAuth();return}
+  me=user;isAdmin=!!ADMIN_UID&&user.uid===ADMIN_UID;
+  if(isAdmin){gateLoading();startSync();startAdmin();updateHdr();return}
+  gateLoading("Checking your access…");
+  unsubs.profile=fb.onSnapshot(fb.doc(db,"profiles",user.uid),snap=>{
+    if(!snap.exists()){
+      if(!signingUp)fb.setDoc(fb.doc(db,"profiles",user.uid),{email:user.email,name:user.displayName||"",status:"pending",createdAt:fb.serverTimestamp()}).catch(console.error);
+      gatePending();return}
+    const st=snap.data().status;
+    if(st==="approved"){if(!syncOn){gateLoading();startSync()}}
+    else{if(syncOn)stopSync();st==="rejected"?gateRejected():gatePending()}
+    updateHdr();
+  },err=>{console.error(err);showGate('<div class="gbrand">Kairos</div><p class="gsub">Couldn’t load your account. Check your connection, then reload the app.</p><div class="glinks"><button class="linkbtn" data-a="signOut">Sign out</button></div>')});
+}
+function startSync(){
+  syncOn=true;firstSnap=true;loaded=false;
+  const mainRef=fb.doc(db,"users",me.uid,"kairos","main");
+  unsubs.main=fb.onSnapshot(mainRef,snap=>{
+    if(!snap.exists()){if(snap.metadata.fromCache)return;seed();return}
+    if(snap.metadata.hasPendingWrites)return;
+    const d=snap.data();
+    if(!firstSnap&&d.by===DEVICE)return;
+    firstSnap=false;
+    try{S=Object.assign(blank(),JSON.parse(d.json))}catch(e){console.error(e)}
+    const was=loaded;loaded=true;
+    if(!was){hideGate();render();updateHdr()}else softRender();
+  },err=>console.error(err));
+  unsubs.imgs=fb.onSnapshot(fb.collection(db,"users",me.uid,"images"),snap=>{
+    snap.docChanges().forEach(c=>{if(c.type==="removed")delete imgs[c.doc.id];else imgs[c.doc.id]=c.doc.data().data});
+    softRender();
+  },err=>console.error(err));
+}
+function seed(){
+  let d=blank();
+  if(isAdmin){try{const j=localStorage.getItem(KEY);if(j)d=Object.assign(d,JSON.parse(j))}catch(e){}}
+  adoptImages(d);S=d;loaded=true;firstSnap=false;
+  pushMain();hideGate();render();updateHdr();
+}
+async function pushMain(){
+  if(!syncOn||!loaded)return;
+  try{await fb.setDoc(fb.doc(db,"users",me.uid,"kairos","main"),{json:JSON.stringify(S),by:DEVICE,updatedAt:fb.serverTimestamp()})}catch(e){console.error(e)}
+}
+function putImg(id,data){imgs[id]=data;if(CLOUD&&syncOn)fb.setDoc(fb.doc(db,"users",me.uid,"images",id),{data}).catch(console.error)}
+function delImg(id){delete imgs[id];if(CLOUD&&syncOn)fb.deleteDoc(fb.doc(db,"users",me.uid,"images",id)).catch(console.error)}
+function adoptImages(d){
+  (d.vision||[]).forEach(v=>{if(v.img&&CLOUD){putImg(v.id,v.img);v.hasImg=true;delete v.img}});
+  if(d._imgs){if(CLOUD)Object.keys(d._imgs).forEach(id=>putImg(id,d._imgs[id]));else(d.vision||[]).forEach(v=>{if(d._imgs[v.id])v.img=d._imgs[v.id]});delete d._imgs}
+}
+function softRender(){
+  if(typing()||document.getElementById("scrim").classList.contains("open")||!loaded){pendingRender=true;return}
+  render();
+}
+document.addEventListener("focusout",()=>{if(pendingRender)setTimeout(()=>{if(!typing()&&!document.getElementById("scrim").classList.contains("open")&&loaded){pendingRender=false;render()}},150)});
+
+/* admin */
+const pendingCount=()=>profiles.filter(p=>p.status==="pending").length;
+function startAdmin(){
+  unsubs.admin=fb.onSnapshot(fb.collection(db,"profiles"),snap=>{
+    profiles=snap.docs.map(d=>Object.assign({id:d.id},d.data())).filter(p=>p.id!==me.uid);
+    updateHdr();if(panelMode==="admin")adminPanel();
+  },e=>console.error(e));
+}
+function updateHdr(){
+  const h=document.getElementById("hdr");
+  if(!CLOUD||!me||!loaded){h.innerHTML="";return}
+  const n=pendingCount();
+  h.innerHTML=(isAdmin?'<button class="chip" data-a="openAdmin">Admin'+(n?'<span class="bd">'+n+'</span>':'')+'</button>':'')+'<button class="chip" data-a="openAccount">Account</button>';
+}
+function openPanel(html){const sh=document.getElementById("sheet");sh.innerHTML=html+'<div class="acts"><button class="no" data-a="closePanel">Close</button></div>';document.getElementById("scrim").classList.add("open")}
+function adminPanel(){
+  const row=(p,b)=>'<div class="req"><div class="who"><b>'+esc(p.name||p.email)+'</b><span class="mini">'+esc(p.email)+'</span></div>'+b+'</div>';
+  const btn=(p,st,l,c)=>'<button class="sm '+c+'" data-a="setStatus" data-id="'+p.id+'" data-st="'+st+'">'+l+'</button>';
+  const pend=profiles.filter(p=>p.status==="pending"),ok=profiles.filter(p=>p.status==="approved"),no=profiles.filter(p=>p.status==="rejected");
+  let h='<h3>Access requests</h3>';
+  if(!profiles.length)h+='<p class="mini">No requests yet. Share your app link, and new sign-ups will show up here.</p>';
+  if(pend.length)h+='<div class="ph">Waiting for approval</div>'+pend.map(p=>row(p,btn(p,"approved","Approve","yes")+btn(p,"rejected","Reject","no"))).join("");
+  if(ok.length)h+='<div class="ph">Approved</div>'+ok.map(p=>row(p,btn(p,"rejected","Remove access","no"))).join("");
+  if(no.length)h+='<div class="ph">Rejected</div>'+no.map(p=>row(p,btn(p,"approved","Approve","yes"))).join("");
+  openPanel(h);
+}
+function accountPanel(){
+  openPanel('<h3>Account</h3><p class="mini"><b>'+esc(me.displayName||"")+'</b><br>'+esc(me.email)+'</p><p class="hint">Your planner syncs to every device where you log in.</p><div class="calbar"><button class="pill" data-a="backup">Back up data</button><button class="pill" data-a="restore">Restore backup</button><button class="pill" data-a="signOut">Sign out</button></div>');
+}
 
 /* ---------- calendar ---------- */
 const pad=n=>String(n).padStart(2,"0");
@@ -301,7 +461,7 @@ function openSheet(title,fields,onSave){
   document.getElementById("scrim").classList.add("open");
   const first=sh.querySelector("input[data-k],textarea");if(first)first.focus();
 }
-function closeSheet(){document.getElementById("scrim").classList.remove("open")}
+function closeSheet(){document.getElementById("scrim").classList.remove("open");panelMode=null;if(pendingRender&&!typing()){pendingRender=false;setTimeout(render,0)}}
 document.getElementById("scrim").addEventListener("click",e=>{if(e.target.id==="scrim")closeSheet()});
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeSheet()});
 
@@ -353,7 +513,7 @@ function vHome(){
   </div>
 
   <div class="note n-butter"><h3>Vision board ${more("vision")}</h3>
-    ${S.vision.length?`<div class="peek">${S.vision.slice(0,5).map(v=>`<div class="p" style="background:${TINTS[v.color]||TINTS.peri}">${v.img?`<img src="${v.img}" alt="">`:esc(v.title)}</div>`).join("")}</div>`:`<div class="mini">Pin your first dream on the board.</div>`}
+    ${S.vision.length?`<div class="peek">${S.vision.slice(0,5).map(v=>`<div class="p" style="background:${TINTS[v.color]||TINTS.peri}">${imgOf(v)?`<img src="${imgOf(v)}" alt="">`:esc(v.title)}</div>`).join("")}</div>`:`<div class="mini">Pin your first dream on the board.</div>`}
   </div>
   </div>`;
 }
@@ -364,7 +524,7 @@ function vVision(){
   return head+`<div class="board">${S.vision.map((v,i)=>`
    <div class="tile" style="background:${TINTS[v.color]||TINTS.peri}">
      <button class="x" data-a="delVision" data-id="${v.id}" aria-label="Remove">×</button>
-     ${v.img?`<img src="${v.img}" alt="">`:""}
+     ${imgOf(v)?`<img src="${imgOf(v)}" alt="">`:""}
      <div class="body"><h3>${esc(v.title)}</h3>${v.note?`<p class="n">${esc(v.note)}</p>`:""}${v.verse?`<p class="v">${esc(v.verse)}</p>`:""}</div>
    </div>`).join("")}</div>`;
 }
@@ -421,7 +581,7 @@ function vFaith(){
     <div class="inline"><input placeholder="Lord, I pray for…" data-prayin><button data-a="addPray">Add</button></div></div>
   </div>`;
 }
-function render(){
+function render(){showVerse();
   document.getElementById("nav").innerHTML=TABS.map(t=>`<button class="${tab===t[0]?"on":""}" data-a="tab" data-t="${t[0]}"><svg viewBox="0 0 24 24">${t[2]}</svg>${t[1]}</button>`).join("");
   document.getElementById("main").innerHTML=({home:vHome,vision:vVision,goals:vGoals,week:vWeek,todo:vTodo,faith:vFaith})[tab]();
 }
@@ -430,12 +590,36 @@ function render(){
 const $=s=>document.querySelector(s);
 const A={
  tab:d=>{tab=d.t;render();window.scrollTo({top:0,behavior:"smooth"})},
+ doAuth:async()=>{
+   const em=document.getElementById("gemail").value.trim(),pw=document.getElementById("gpass").value,nmEl=document.getElementById("gname"),nm=nmEl?nmEl.value.trim():"";
+   if(authMode==="signup"&&!nm){setMsg("Please enter your name.");return}
+   if(!em||!pw){setMsg("Please enter your email and password.");return}
+   setMsg("One moment…");
+   try{
+     if(authMode==="signup"){
+       signingUp=true;
+       const c=await fb.createUserWithEmailAndPassword(auth,em,pw);
+       await fb.updateProfile(c.user,{displayName:nm});
+       await fb.setDoc(fb.doc(db,"profiles",c.user.uid),{email:em,name:nm,status:"pending",createdAt:fb.serverTimestamp()});
+       signingUp=false;
+     }else await fb.signInWithEmailAndPassword(auth,em,pw);
+   }catch(e){signingUp=false;console.error(e);setMsg(authErr(e))}
+ },
+ toggleAuth:()=>{const em=document.getElementById("gemail").value;authMode=authMode==="login"?"signup":"login";showAuth();document.getElementById("gemail").value=em},
+ forgot:async()=>{const em=document.getElementById("gemail").value.trim();if(!em){setMsg("Type your email above first.");return}
+   try{await fb.sendPasswordResetEmail(auth,em);setMsg("Reset link sent. Please check your inbox.")}catch(e){setMsg(authErr(e))}},
+ signOut:()=>{closeSheet();fb.signOut(auth)},
+ openAdmin:()=>{panelMode="admin";adminPanel()},
+ openAccount:()=>{panelMode="account";accountPanel()},
+ closePanel:()=>closeSheet(),
+ setStatus:d=>{fb.updateDoc(fb.doc(db,"profiles",d.id),{status:d.st}).catch(e=>{console.error(e);alert("Couldn’t update. Check that your ADMIN_UID and Firestore rules are set up.")})},
+ copyUid:()=>{if(navigator.clipboard)navigator.clipboard.writeText(me.uid).then(()=>alert("Copied!"))},
  gcal:d=>{const day=d.day||selDay;const it=(S.plan[day]||[]).find(x=>x.id===d.id);if(!it)return;const ev=evtTimes(day,it.time);
    const url="https://calendar.google.com/calendar/render?action=TEMPLATE&text="+encodeURIComponent(it.t)+"&dates="+ev.s+"/"+ev.e+"&details="+encodeURIComponent("Added from Kairos"+(S.focus[day]?"\nFocus: "+S.focus[day]:""));
    window.open(url,"_blank","noopener")},
  expWeek:()=>exportDays(weekDays().map(ymd),"kairos-week.ics"),
  expAll:()=>exportDays(Object.keys(S.plan).sort(),"kairos-planner.ics"),
- backup:()=>download("kairos-backup.json",JSON.stringify(S),"application/json"),
+ backup:()=>download("kairos-backup.json",JSON.stringify(CLOUD?Object.assign({},S,{_imgs:imgs}):S),"application/json"),
  restore:()=>document.getElementById("restore").click(),
  shuffle:()=>{S.verse={d:ymd(new Date()),i:(verseIdx()+1)%VERSES.length};showVerse();save()},
  addVision:()=>openSheet("Add to your board",[
@@ -444,8 +628,8 @@ const A={
    {k:"verse",label:"Verse or promise (optional)",ph:"e.g. Psalm 37:4"},
    {k:"img",label:"Photo (optional)",type:"image"},
    {k:"color",label:"Color",type:"color"}],
-   v=>{if(!v.title.trim()&&!v.img)return;S.vision.unshift({id:uid(),title:v.title.trim(),note:v.note.trim(),verse:v.verse.trim(),img:v.img||"",color:v.color||"peri"})}),
- delVision:d=>{S.vision=S.vision.filter(x=>x.id!==d.id);save();render()},
+   v=>{if(!v.title.trim()&&!v.img)return;const id=uid(),it={id,title:v.title.trim(),note:v.note.trim(),verse:v.verse.trim(),color:v.color||"peri"};if(v.img){if(CLOUD){putImg(id,v.img);it.hasImg=true}else it.img=v.img}S.vision.unshift(it)}),
+ delVision:d=>{delImg(d.id);S.vision=S.vision.filter(x=>x.id!==d.id);save();render()},
  addGoal:()=>openSheet("New goal",[
    {k:"title",label:"Goal",ph:"e.g. Read the whole Bible this year"},
    {k:"cat",label:"Area of life",type:"select",options:CATS},
@@ -472,6 +656,7 @@ const A={
  delPray:d=>{S.prayers=S.prayers.filter(x=>x.id!==d.id);save();render()}
 };
 document.addEventListener("click",e=>{const b=e.target.closest("[data-a]");if(b&&A[b.dataset.a])A[b.dataset.a](b.dataset)});
+document.addEventListener("keydown",e=>{if(e.key==="Enter"&&/^g(name|email|pass)$/.test(e.target.id))A.doAuth()});
 document.addEventListener("keydown",e=>{
   if(e.key!=="Enter")return;const t=e.target;
   const map={stepin:"addStep",planin:"addPlan",todoin:"addTodo",gratin:"addGrat",prayin:"addPray"};
@@ -481,13 +666,15 @@ document.addEventListener("input",e=>{const t=e.target;if(t.hasAttribute&&t.hasA
 
 document.getElementById("restore").addEventListener("change",e=>{
   const f=e.target.files[0];if(!f)return;const r=new FileReader();
-  r.onload=()=>{try{const d=JSON.parse(r.result);if(!confirm("Replace everything in this app with the backup?"))return;S=Object.assign({vision:[],goals:[],todos:[],plan:{},focus:{},gratitude:[],prayers:[],verse:null},d);save();render()}catch(err){alert("That file isn’t a valid Kairos backup.")}};
+  r.onload=()=>{try{const d=JSON.parse(r.result);if(!confirm("Replace everything in this app with the backup?"))return;adoptImages(d);S=Object.assign(blank(),d);save();render()}catch(err){alert("That file isn’t a valid Kairos backup.")}};
   r.readAsText(f);e.target.value="";
 });
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("sw.js").catch(()=>{});
 (async()=>{
-  document.getElementById("today").textContent=new Date().toLocaleDateString("en",{weekday:"long",month:"long",day:"numeric"});
-  await load();showVerse();render();
+  document.getElementById("today").textContent=new Date().toLocaleDateString("en",{weekday:"short",month:"short",day:"numeric"});
+  showVerse();
+  if(CLOUD){try{await initCloud()}catch(e){console.error(e);showGate('<div class="gbrand">Kairos</div><p class="gsub">Couldn’t connect. Check your internet, then reload the app.</p>')}}
+  else{await load();render()}
 })();
 </script>
 </body>

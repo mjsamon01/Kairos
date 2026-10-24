@@ -1,4 +1,4 @@
-const CACHE = "kairos-v1";
+const CACHE = "kairos-v2";
 const ASSETS = ["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 
 self.addEventListener("install", e => {
@@ -15,7 +15,7 @@ self.addEventListener("fetch", e => {
     // network first so new versions arrive; fall back to cache when offline
     e.respondWith(fetch(req).then(r => { const cp = r.clone(); caches.open(CACHE).then(c => c.put(req, cp)); return r; })
       .catch(() => caches.match(req).then(m => m || caches.match("./index.html"))));
-  } else if (/fonts\.(googleapis|gstatic)\.com$/.test(url.host)) {
+  } else if (/^(fonts\.(googleapis|gstatic)\.com|www\.gstatic\.com)$/.test(url.host)) {
     e.respondWith(caches.open(CACHE).then(c => c.match(req).then(m => m || fetch(req).then(r => { c.put(req, r.clone()); return r; }))));
   }
 });
