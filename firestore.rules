@@ -4,7 +4,7 @@ service cloud.firestore {
 
     // Replace ADMIN_UID_HERE with your own user ID (shown on the "Almost there" screen).
     function isAdmin() {
-      return request.auth != null && request.auth.uid == 'ADMIN_UID_HERE';
+      return request.auth != null && request.auth.uid == 'mjsamon01@gmail.com';
     }
     function isApproved() {
       return request.auth != null && (
