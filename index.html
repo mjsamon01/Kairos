@@ -221,8 +221,15 @@ nav button.on svg{stroke:var(--gold)}
 
 <script>
 /* ========= SETUP: paste your Firebase details here (see README) ========= */
-const FIREBASE_CONFIG={apiKey:"PASTE_API_KEY",authDomain:"PASTE_AUTH_DOMAIN",projectId:"PASTE_PROJECT_ID",storageBucket:"PASTE_STORAGE_BUCKET",messagingSenderId:"PASTE_SENDER_ID",appId:"PASTE_APP_ID"};
-const ADMIN_UID=""; // your own user ID, shown on the "Almost there" screen after you first sign up
+const firebaseConfig = {
+  apiKey: "AIzaSyDXHVaGy2rHbHcJ2qPAIUanVC2mkjpNoGw",
+  authDomain: "kairos-472c8.firebaseapp.com",
+  projectId: "kairos-472c8",
+  storageBucket: "kairos-472c8.firebasestorage.app",
+  messagingSenderId: "840024837452",
+  appId: "1:840024837452:web:115ae9008f4b71e23093e9"
+};
+const ADMIN_UID="mjsamon01@gmail.com"; // your own user ID, shown on the "Almost there" screen after you first sign up
 /* ======================================================================== */
 const CLOUD=!FIREBASE_CONFIG.apiKey.startsWith("PASTE");
 const VERSES=[
